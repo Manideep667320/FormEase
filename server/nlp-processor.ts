@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { FormSectionWithFields } from "../src/lib/firebaseService";
+import { FormSectionWithFields } from "../src/lib/firebaseService.ts";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "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" });

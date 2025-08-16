@@ -3,7 +3,7 @@
       {
         "field_name": "1. Type of Enrolment",
         "type": "radio",
-        "options": ["New Enrolment", "Update"]
+        "options": ["New Enrollment", "Update"]
       },
       {
         "field_name": "2. Status",
@@ -111,15 +111,15 @@
         "fields": [
           {
             "field_name": "a. POI (Proof of Identity)",
-            "type": "text"
+            "type": "file"
           },
           {
             "field_name": "b. POA (Proof of Address)",
-            "type": "text"
+            "type": "file"
           },
           {
             "field_name": "c. DOB (Date of Birth) (Mandatory in case of Verified Date of Birth)",
-            "type": "text"
+            "type": "file"
           }
         ]
       },

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+  "start:server": "ts-node server/index.ts",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -27,6 +28,7 @@
     "lucide-react": "^0.344.0",
     "next-themes": "^0.4.6",
     "openai": "^4.95.0",
+    "pdf-lib": "^1.17.1",
     "radix-ui": "^1.2.0",
     "react": "^18.3.1",
     "react-day-picker": "^9.6.6",
@@ -39,6 +41,7 @@
     "tailwind-merge": "^3.2.0",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
+    "wouter": "^3.7.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -48,6 +51,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/recharts": "^1.8.29",
     "@types/uuid": "^10.0.0",
+    "@types/wouter": "^2.0.1",
     "@vitejs/plugin-react": "^4.3.1",
     "@vitejs/plugin-react-swc": "^3.8.1",
     "autoprefixer": "^10.4.18",

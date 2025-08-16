@@ -134,7 +134,7 @@
         "fields": [
           {
             "field_name": "(9) Category of disability, if any",
-            "type": "checkbox",
+            "type": "text",
             "options": ["Locomotive", "Visual", "Deaf & Dumb", "If any other (Give description)"]
           },
           {

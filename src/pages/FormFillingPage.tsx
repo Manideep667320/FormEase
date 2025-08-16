@@ -7,6 +7,8 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
 import VoiceAssistant from '../components/VoiceAssistant';
+import { useToast } from '../hooks/use-toast';
+import { apiRequest } from '../lib/queryClient';
 
 interface FormSection {
   id: number;
@@ -41,8 +43,12 @@ interface LocalFormSectionWithFields {
   }[];
 }
 
+import Success from './Succes';
+import { Dialog, DialogContent } from '../components/ui/dialog';
+
 const FormFillingPage: React.FC = () => {
   const { currentUser } = useAuth();
+  const { toast } = useToast();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { formType } = useParams();
   const navigate = useNavigate();
@@ -50,6 +56,8 @@ const FormFillingPage: React.FC = () => {
   const [formStructure, setFormStructure] = useState<FormStructure>({});
   const [formData, setFormData] = useState<{ [key: string]: string }>({});
   const [sections, setSections] = useState<FormSection[]>([]);
+
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const getFormTitle = () => {
     switch (formType) {
@@ -286,9 +294,80 @@ const FormFillingPage: React.FC = () => {
 
   // Handler for form submission
   const onFormSubmit = () => {
-    // For now, just log the formData and navigate back to main page
+    // Transform sections to include fields for PDF generation
+    const sectionsWithFields = sections.map(section => ({
+      ...section,
+      fields: (formStructure[section.title] || []).map(field => ({
+        label: field.label,
+        required: true, // Assuming all fields are required; adjust if needed
+        value: formData[field.name] || ''
+      }))
+    }));
+
+    // Save form data and structure to localStorage for Succes page
+    const formToSave = {
+      formData,
+      formStructure,
+      sections: sectionsWithFields
+    };
+    localStorage.setItem('lastSubmittedForm', JSON.stringify(formToSave));
     console.log("Form submitted with data:", formData);
-    navigate('/main');
+    // Show success popup instead of navigating
+    setShowSuccessPopup(true);
+  };
+
+  // Save Draft function
+  const saveDraft = async () => {
+    if (!currentUser) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to save a draft.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const draftName = prompt('Enter a name for your draft:', `Draft - ${new Date().toLocaleString()}`);
+    if (!draftName) {
+      toast({
+        title: 'Error',
+        description: 'Draft name is required to save.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const token = await currentUser.getIdToken();
+
+      const draftPayload = {
+        formTypeId: formType || 'unknown',
+        name: draftName,
+        data: formData,
+      };
+
+      await apiRequest({
+        url: '/api/drafts',
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        data: draftPayload,
+      });
+
+      toast({
+        title: 'Success',
+        description: 'Draft saved successfully.',
+      });
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Failed to save draft.';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    }
   };
 
   // Format time difference for last edited display
@@ -371,9 +450,14 @@ const FormFillingPage: React.FC = () => {
                   <Button variant="outline" onClick={() => navigate('/main')}>
                     Back
                   </Button>
-                  <Button className="bg-primary hover:bg-primary/90 text-white" onClick={onFormSubmit}>
-                    Submit Form
-                  </Button>
+                  <div className="flex space-x-4">
+                    <Button className="bg-secondary hover:bg-secondary/90 text-white" onClick={saveDraft}>
+                      Save Draft
+                    </Button>
+                    <Button className="bg-primary hover:bg-primary/90 text-white" onClick={onFormSubmit}>
+                      Submit Form
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -390,6 +474,13 @@ const FormFillingPage: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Success Modal */}
+      <Dialog open={showSuccessPopup} onOpenChange={setShowSuccessPopup}>
+        <DialogContent>
+          <Success isModal onClose={() => setShowSuccessPopup(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

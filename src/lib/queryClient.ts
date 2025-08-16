@@ -2,8 +2,10 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+  const text = (await res.text().catch(() => '')) || res.statusText;
+  console.error(`API response not OK: ${res.status} ${res.statusText}`, text);
+  const payload = text && text.length < 2000 ? text : res.statusText;
+  throw new Error(`${res.status}: ${payload}`);
   }
 }
 
@@ -31,6 +33,11 @@ export async function apiRequest<T = any>({
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+  // Log non-ok responses with body for easier debugging
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '');
+    console.error(`apiRequest error for ${method} ${url}:`, res.status, bodyText);
+  }
 
   await throwIfResNotOk(res);
   

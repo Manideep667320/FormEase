@@ -13,17 +13,60 @@ import {
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
-import {
-  User,
-  FormType,
-  FormSection,
-  FormField,
-  FormSubmission,
-  FormDraft,
-  Message,
-  FormSectionWithFields,
-  UserSession,
-} from "../lib/firebaseService";
+import { FormDraft, FormSectionWithFields } from "../lib/firebaseService.ts";
+
+// Minimal local type definitions for compile-time compatibility
+interface User {
+  id: string;
+  username?: string;
+  email?: string;
+  fullName?: string;
+  createdAt?: any;
+}
+
+interface FormType {
+  id: string;
+  code?: string;
+  name?: string;
+}
+
+interface FormSection {
+  id: string;
+  title: string;
+  order?: number;
+}
+
+interface FormField {
+  id: string;
+  sectionId: string;
+  label: string;
+  fieldKey: string;
+  required: boolean;
+  type: string;
+}
+
+interface FormSubmission {
+  id?: string;
+  userId: string;
+  formId: string;
+  formData: any;
+  createdAt?: any;
+}
+
+interface Message {
+  id?: string;
+  sessionId?: string;
+  senderId?: string;
+  text?: string;
+  timestamp?: any;
+}
+
+interface UserSession {
+  id?: string;
+  userId: string;
+  token: string;
+  createdAt?: any;
+}
 
 const firebaseConfig = {
   // Add your Firebase config here
@@ -199,7 +242,8 @@ export class FirebaseStorage implements IStorage {
 
     return {
       formType,
-      sections: sectionsWithFields.sort((a, b) => a.order - b.order),
+      // sections may include an `order` property from firestore data; sort defensively
+      sections: (sectionsWithFields as any).sort((a: any, b: any) => (a.order || 0) - (b.order || 0)),
     };
   }
 
@@ -243,7 +287,8 @@ export class FirebaseStorage implements IStorage {
       createdAt: now,
       lastUpdated: now,
     });
-    return { id: docRef.id, userId: draft.userId, formId: draft.formId, data: draft.data, createdAt: now, lastUpdated: now };
+  // Ensure we return the stored shape using `formTypeId` to match the rest of the codebase
+  return { id: docRef.id, userId: draft.userId, formTypeId: (draft as any).formTypeId, data: (draft as any).data, createdAt: now, lastUpdated: now };
   }
 
   async getFormDraft(id: string): Promise<FormDraft | undefined> {

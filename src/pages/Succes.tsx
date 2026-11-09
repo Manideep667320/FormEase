@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useLocation } from "wouter";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,7 +14,7 @@ interface SuccessProps {
 
 export default function Success({ isModal = false, onClose }: SuccessProps) {
   const { submissionId } = useParams<{ submissionId: string }>();
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [formData, setFormData] = useState<any>(null);
@@ -52,6 +52,21 @@ export default function Success({ isModal = false, onClose }: SuccessProps) {
 
       const pdfBytes = await generateFormPdf("Completed Form", sanitizedSections);
       downloadPdf(pdfBytes, "completed-form.pdf");
+
+      // Auto-archive generated PDF to formease-storage bucket
+      try {
+        const binaryString = Array.from(pdfBytes, byte => String.fromCharCode(byte)).join('');
+        const base64Pdf = btoa(binaryString);
+        fetch('/api/storage/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: `form-submission-${Date.now()}.pdf`,
+            content: base64Pdf,
+            contentType: 'application/pdf'
+          })
+        }).catch(() => {});
+      } catch (_) {}
       
       toast({
         title: "PDF Generated",

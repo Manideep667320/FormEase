@@ -1,6 +1,9 @@
-
+import React, { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
-import { useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const benefits = [
   {
@@ -22,18 +25,90 @@ const benefits = [
 
 const BenefitsSection = () => {
   const [activeBenefit, setActiveBenefit] = useState(0);
-  
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const buttonsRef = useRef<HTMLDivElement>(null);
+  const detailsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!sectionRef.current) return;
+
+    const ctx = gsap.context(() => {
+      if (headerRef.current) {
+        gsap.fromTo(
+          headerRef.current,
+          { y: -30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: headerRef.current,
+              start: "top 85%",
+              end: "bottom 15%",
+              toggleActions: "play reverse play reverse",
+            },
+          }
+        );
+      }
+
+      if (buttonsRef.current) {
+        const btns = buttonsRef.current.children;
+        gsap.fromTo(
+          btns,
+          { x: -50, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.7,
+            stagger: 0.15,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: buttonsRef.current,
+              start: "top 80%",
+              end: "bottom 20%",
+              toggleActions: "play reverse play reverse",
+            },
+          }
+        );
+      }
+
+      if (detailsRef.current) {
+        gsap.fromTo(
+          detailsRef.current,
+          { y: 50, opacity: 0, scale: 0.96 },
+          {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 0.8,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: detailsRef.current,
+              start: "top 80%",
+              end: "bottom 20%",
+              toggleActions: "play reverse play reverse",
+            },
+          }
+        );
+      }
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section id="benefits" className="py-20">
+    <section ref={sectionRef} id="benefits" className="py-20 overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
+        <div ref={headerRef} className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Use Voice Forms?</h2>
           <p className="text-xl text-foreground/70 max-w-2xl mx-auto">
             Experience the transformative benefits of voice-powered form completion
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div ref={buttonsRef} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {benefits.map((benefit, index) => (
             <button
               key={index}
@@ -52,7 +127,7 @@ const BenefitsSection = () => {
           ))}
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
+        <div ref={detailsRef} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
           <h3 className="text-2xl font-bold text-primary mb-6">{benefits[activeBenefit].title} Benefits</h3>
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {benefits[activeBenefit].items.map((item, index) => (

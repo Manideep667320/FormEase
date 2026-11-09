@@ -1,35 +1,35 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useScroll, useMotionValueEvent } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
 import UserProfile from "@/components/UserProfile";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { LoginForm } from "@/components/LoginForm";
 import { RegisterForm } from "@/components/RegisterForm";
-import { useAuth } from "@/context/AuthContext";
-import { Menu, X } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  Sheet,
-  SheetContent,
-  SheetClose,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Link } from "react-router-dom";
+  Navbar,
+  NavBody,
+  NavItems,
+  MobileNav,
+  MobileNavHeader,
+  MobileNavMenu,
+  MobileNavToggle,
+} from "@/components/ui/resizable-navbar";
 
 const Header = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { currentUser } = useAuth();
-  const isMobile = useIsMobile();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const { scrollY } = useScroll();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setIsScrolled(latest > 50);
+  });
 
   const handleOpenRegister = () => {
     setShowLoginModal(false);
@@ -41,106 +41,164 @@ const Header = () => {
     setShowLoginModal(true);
   };
 
-
-  const navLinks = [
-    { title: "Features", href: "#features" },
-    { title: "Benefits", href: "#benefits" },
-    { title: "Testimonials", href: "#testimonials" },
-    { title: "Pricing", href: "#pricing" },
+  const navItems = [
+    { name: "Features", link: "#features" },
+    { name: "Benefits", link: "#benefits" },
+    { name: "Testimonials", link: "#testimonials" },
+    { name: "Pricing", link: "#pricing" },
   ];
 
   return (
-    <header 
-      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/90 backdrop-blur-md shadow-sm" : "bg-transparent"
-      }`}
-    >
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-full flex items-center justify-center"
-            style={{ 
-              background: "url('/logo.jpeg')", 
-              backgroundSize: 'cover' }}
+    <>
+      <Navbar className="top-0">
+        {/* Desktop Resizable Navbar */}
+        <NavBody>
+          {/* Logo */}
+          <Link to="/" className="relative z-20 flex items-center space-x-2.5 px-1 py-1">
+            <div
+              className="h-8 w-8 rounded-full flex items-center justify-center border border-white/30 shadow-xs"
+              style={{
+                background: "url('/logo.jpeg')",
+                backgroundSize: "cover",
+              }}
             />
-          <span className="font-bold text-xl text-primary hover:text-orange-600 transition-colors">FormEase</span>
-        </div>
-        
-        <nav className="hidden md:flex space-x-8">
-        {navLinks.map(link => (
-            <a 
-              key={link.title}
-              href={link.href} 
-              className="text-foreground/80 text-xl hover:text-primary transition-colors"
+            <span
+              className={cn(
+                "font-bold text-xl transition-colors duration-200",
+                isScrolled ? "text-primary hover:text-orange-600" : "text-white drop-shadow-xs"
+              )}
             >
-              {link.title}
-            </a>
-          ))}
-        </nav>
-        
-        <div className="flex items-center space-x-4">
-          {currentUser ? (
-            <UserProfile />
-          ) : (
-            <>
-              <Button 
-                className="hidden text-color-black md:inline-flex bg-transparent hover:bg-gray-100"
-                onClick={() => setShowLoginModal(true)}
-              >
-                Log in
-              </Button>
-              <Button 
-                className="bg-accent hover:bg-accent/90"
-                onClick={() => setShowRegisterModal(true)}
-              >
-                {isMobile ? "Start" : "Get Started"}
-              </Button>
-            </>
-          )}
+              FormEase
+            </span>
+          </Link>
 
-          {/* Mobile Navigation */}
-          {isMobile && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[75%] sm:w-[350px] py-12">
-                <nav className="flex flex-col gap-6">
-                  {navLinks.map(link => (
-                    <SheetClose asChild key={link.title}>
-                      <a
-                        href={link.href}
-                        className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-                      >
-                        {link.title}
-                      </a>
-                    </SheetClose>
-                  ))}
-                  {!currentUser && (
-                    <SheetClose asChild>
-                      <Button 
-                        onClick={() => setShowLoginModal(true)}
-                        className="w-full mt-4"
-                      >
-                        Log in
-                      </Button>
-                    </SheetClose>
+          {/* Desktop Center Links */}
+          <NavItems items={navItems} visible={isScrolled} />
+
+          {/* Desktop Right Actions */}
+          <div className="relative z-20 flex items-center space-x-3">
+            {currentUser ? (
+              <div className="flex items-center space-x-3">
+                <UserProfile />
+                <Link to="/main">
+                  <Button className="bg-primary hover:bg-primary/90 text-white font-semibold text-xs px-3.5 py-1.5 h-8 rounded-full shadow-xs">
+                    Dashboard
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "hidden md:inline-flex font-semibold text-sm px-3.5 h-9 rounded-full transition-colors",
+                    isScrolled
+                      ? "text-slate-800 hover:text-primary hover:bg-slate-100"
+                      : "text-white hover:text-white hover:bg-white/15 drop-shadow-xs"
                   )}
-                  <SheetClose asChild>
-                    <Link to="/main" className="block mt-4">
-                      <Button className="w-full bg-primary hover:bg-primary/90">
+                  onClick={() => setShowLoginModal(true)}
+                >
+                  Log in
+                </Button>
+                <Button
+                  className="bg-accent hover:bg-accent/90 text-white font-semibold text-sm px-4 h-9 rounded-full shadow-sm transition-transform hover:-translate-y-0.5"
+                  onClick={() => setShowRegisterModal(true)}
+                >
+                  Get Started
+                </Button>
+              </div>
+            )}
+          </div>
+        </NavBody>
+
+        {/* Mobile Resizable Navbar */}
+        <MobileNav>
+          <MobileNavHeader>
+            <Link to="/" className="flex items-center space-x-2">
+              <div
+                className="h-7 w-7 rounded-full flex items-center justify-center border border-white/30 shadow-xs"
+                style={{
+                  background: "url('/logo.jpeg')",
+                  backgroundSize: "cover",
+                }}
+              />
+              <span
+                className={cn(
+                  "font-bold text-lg transition-colors",
+                  isScrolled ? "text-primary" : "text-white drop-shadow-xs"
+                )}
+              >
+                FormEase
+              </span>
+            </Link>
+
+            <div className="flex items-center space-x-2">
+              {!currentUser && (
+                <Button
+                  size="sm"
+                  className="bg-accent hover:bg-accent/90 text-white font-semibold text-xs px-3 h-8 rounded-full"
+                  onClick={() => setShowRegisterModal(true)}
+                >
+                  Start
+                </Button>
+              )}
+              <MobileNavToggle
+                isOpen={isMobileMenuOpen}
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                visible={isScrolled}
+              />
+            </div>
+          </MobileNavHeader>
+
+          <MobileNavMenu
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
+          >
+            <div className="flex flex-col gap-4 w-full">
+              {navItems.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.link}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-base font-semibold text-slate-800 hover:text-primary transition-colors py-1"
+                >
+                  {item.name}
+                </a>
+              ))}
+              <div className="pt-4 border-t border-slate-100 flex flex-col gap-2.5 w-full">
+                {currentUser ? (
+                  <div className="flex items-center justify-between">
+                    <UserProfile />
+                    <Link to="/main" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button className="bg-primary hover:bg-primary/90 text-white font-semibold text-sm">
                         Access Dashboard
                       </Button>
                     </Link>
-                  </SheetClose>
-                </nav>
-              </SheetContent>
-            </Sheet>
-            )} 
-        </div>
-      </div>
+                  </div>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="w-full text-slate-800 font-semibold"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setShowLoginModal(true);
+                      }}
+                    >
+                      Log in
+                    </Button>
+                    <Link to="/main" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">
+                        Access Dashboard
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </MobileNavMenu>
+        </MobileNav>
+      </Navbar>
 
       {/* Login Dialog */}
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
@@ -148,7 +206,7 @@ const Header = () => {
           <LoginForm onSuccess={() => setShowLoginModal(false)} />
           <div className="mt-4 text-center text-sm">
             Don't have an account?{" "}
-            <Button className="p-0 text-link" onClick={handleOpenRegister}>
+            <Button variant="link" className="p-0 text-primary font-semibold" onClick={handleOpenRegister}>
               Register
             </Button>
           </div>
@@ -158,19 +216,19 @@ const Header = () => {
       {/* Register Dialog */}
       <Dialog open={showRegisterModal} onOpenChange={setShowRegisterModal}>
         <DialogContent className="sm:max-w-md">
-          <RegisterForm 
-            onSuccess={() => setShowRegisterModal(false)} 
+          <RegisterForm
+            onSuccess={() => setShowRegisterModal(false)}
             onRegistrationComplete={handleOpenLogin}
           />
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
-            <Button className="p-0 text-link" onClick={handleOpenLogin}>
+            <Button variant="link" className="p-0 text-primary font-semibold" onClick={handleOpenLogin}>
               Log in
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    </header>
+    </>
   );
 };
 

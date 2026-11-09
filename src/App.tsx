@@ -8,6 +8,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Index from "./pages/index";
 import MainPage from "./pages/MainPage";
 import FormFillingPage from "./pages/FormFillingPage";
+import Drafts from "./pages/Drafts";
 import NotFound from "./pages/NotFound";
 
 // Create a client
@@ -25,6 +26,7 @@ const App: React.FC = () => (
               <Route path="/" element={<Index />} />
               <Route path="/main" element={<MainPage />} />
               <Route path="/form/:formType" element={<FormFillingPage />} />
+              <Route path="/drafts" element={<Drafts />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

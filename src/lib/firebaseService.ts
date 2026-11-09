@@ -11,20 +11,30 @@ import {
   where,
   getDocs,
   deleteDoc,
-  DocumentData,
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 
+const env = (typeof process !== "undefined" && process.env) || {};
+const metaEnv = (typeof import.meta !== "undefined" && (import.meta as any).env) || {};
+
 // Firebase config (replace with your actual values)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAZ96B2F3OrkwDRoYP5q3iMyx4cnHLv4SU",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||  "formease-bf6ad.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ||  "formease-bf6ad",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "formease-bf6ad.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "349366421308",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:349366421308:web:825795fe7391a0f02dc039"
+  apiKey: env.VITE_FIREBASE_API_KEY || metaEnv.VITE_FIREBASE_API_KEY || "AIzaSyAZ96B2F3OrkwDRoYP5q3iMyx4cnHLv4SU",
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || metaEnv.VITE_FIREBASE_AUTH_DOMAIN ||  "formease-bf6ad.firebaseapp.com",
+  projectId: env.VITE_FIREBASE_PROJECT_ID || metaEnv.VITE_FIREBASE_PROJECT_ID ||  "formease-bf6ad",
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || metaEnv.VITE_FIREBASE_STORAGE_BUCKET || "formease-bf6ad.firebasestorage.app",
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || "349366421308",
+  appId: env.VITE_FIREBASE_APP_ID || metaEnv.VITE_FIREBASE_APP_ID || "1:349366421308:web:825795fe7391a0f02dc039"
 };
+
+// Chat message interface
+export interface ChatMessage {
+  id?: string;
+  sender: 'user' | 'bot';
+  text: string;
+  thinking?: boolean;
+}
 
 // Define FormDraft type
 export interface FormDraft {
@@ -54,8 +64,6 @@ export interface FormSectionWithFields {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-// Type definitions (existing)...
 
 // Helper function to fetch form sections by formTypeId
 export async function fetchFormSections(formTypeId: string) {

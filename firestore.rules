@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only access their own user profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // User sessions
+    match /userSessions/{sessionId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Form Drafts: users can only create, view, update, and delete their own drafts
+    match /formDrafts/{draftId} {
+      allow read, update, delete: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Form submissions: users can create and view their own submissions
+    match /formSubmissions/{subId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Public form schemas and fields
+    match /formTypes/{typeId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /formSections/{sectionId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /formFields/{fieldId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Default: require authentication for any other document
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

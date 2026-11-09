@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../hooks/use-toast';
 import { apiRequest } from '../lib/queryClient';
-import { useLocation } from 'wouter';
+import { useNavigate } from 'react-router-dom';
 import type { FormDraft } from '../lib/firebaseService';
 
 interface Draft extends FormDraft {
@@ -47,7 +47,7 @@ interface DraftManagerProps {
 
 export default function DraftManager({ authToken, onContinueDraft, isModal, onClose }: DraftManagerProps) {
   const { toast } = useToast();
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
   
@@ -121,7 +121,13 @@ export default function DraftManager({ authToken, onContinueDraft, isModal, onCl
       onContinueDraft(draft);
     } else {
       // Get the form type code
-      const formType = formTypes?.find(type => type.id === parseInt(draft.formTypeId));
+      const formType = formTypes?.find(type => String(type.id) === String(draft.formTypeId) || type.code?.toLowerCase() === draft.formTypeId?.toLowerCase());
+      const targetCode = formType?.code || draft.formTypeId;
+      if (targetCode) {
+        navigate(`/form/${targetCode}?draftId=${draft.id}`);
+        if (onClose) onClose();
+      }
+      return;
       if (formType) {
         // If not in modal mode, navigate to the form filling page with the draft
         navigate(`/form/${formType.code}?draftId=${draft.id}`);
@@ -136,7 +142,9 @@ export default function DraftManager({ authToken, onContinueDraft, isModal, onCl
   };
   
   const getFormTypeName = (formTypeId: string) => {
-    const formType = formTypes?.find(type => type.id === parseInt(formTypeId));
+    const formType = formTypes?.find(type => String(type.id) === String(formTypeId) || type.code?.toLowerCase() === formTypeId?.toLowerCase());
+    if (formType?.name) return formType.name;
+    if (formTypeId) return formTypeId.charAt(0).toUpperCase() + formTypeId.slice(1) + ' Form';
     return formType?.name || 'Unknown Form';
   };
 

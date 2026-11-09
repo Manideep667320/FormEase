@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { FormSectionWithFields } from "../src/lib/firebaseService.ts";
+import type { FormSectionWithFields } from "../src/lib/firebaseService.ts";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "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" });
@@ -199,6 +199,11 @@ export interface NlpResponse {
   }[];
   nextQuestion: string;
   confidence: number;
+  clarification?: {
+    fieldKey: string;
+    label: string;
+    question: string;
+  };
 }
 
 export interface NlpError {
@@ -231,8 +236,8 @@ export async function processUserInput(
 
     try {
       const systemPrompt = `
-You are an AI assistant helping a user fill out a ${formCode} form using voice commands.
-The user is speaking to you, and their input will be analyzed to extract information for the form.
+You are an AI assistant helping a citizen prepare an Indian ${formCode} government application form using voice guidance.
+The user is speaking to you, and their input must be parsed into candidate form values.
 
 Current form state:
 ${JSON.stringify(formStructure, null, 2)}
@@ -243,10 +248,9 @@ Current context:
 - Current field: ${currentContext.currentFieldKey || 'None'}
 
 Your task is to:
-1. Analyze the user's voice input
-2. Extract relevant information to fill form fields
-3. Determine which fields to update
-4. Provide the next question to ask the user
+1. Extract candidate form fields and values accurately from user speech.
+2. Formulate exactly ONE natural, concise clarification question for the next required missing field.
+3. If an input is ambiguous, ask the user to clarify (e.g. choose between options).
 
 Respond with a JSON object in this exact format:
 {
@@ -258,12 +262,13 @@ Respond with a JSON object in this exact format:
     }
   ],
   "nextQuestion": string,
-  "confidence": number (0.0 to 1.0)
+  "confidence": number,
+  "clarification": {
+    "fieldKey": string,
+    "label": string,
+    "question": string
+  }
 }
-
-For fieldUpdates, include ALL fields you can extract from the input, even if there are multiple.
-For nextQuestion, provide a natural-sounding follow-up question based on the form's flow.
-For confidence, provide a number from 0 to 1 indicating how confident you are in the extraction.
       `;
 
       const response = await openai.chat.completions.create({
@@ -290,6 +295,7 @@ For confidence, provide a number from 0 to 1 indicating how confident you are in
       
       // Find a field to ask about next
       let nextQuestion = "Could you please provide more information for the form?";
+      let clarification: { fieldKey: string; label: string; question: string } | undefined = undefined;
       
       // Find the first empty required field to ask about
       const flatFields = formSections.flatMap(section => 
@@ -303,22 +309,41 @@ For confidence, provide a number from 0 to 1 indicating how confident you are in
       // Prioritize required empty fields
       const nextEmptyRequiredField = flatFields.find(f => f.field.required && f.isEmpty);
       if (nextEmptyRequiredField) {
-        nextQuestion = `What is your ${nextEmptyRequiredField.field.label.toLowerCase()}?`;
+        const fld = nextEmptyRequiredField.field;
+        let q = `What is your ${fld.label.toLowerCase()}?`;
+        if (fld.options && fld.options.length > 0) {
+          q = `For ${fld.label.toLowerCase()}, please choose between: ${fld.options.slice(0, 4).join(" or ")}.`;
+        }
+        nextQuestion = q;
+        clarification = {
+          fieldKey: fld.fieldKey,
+          label: fld.label,
+          question: q
+        };
       } else {
-        // Or just any empty field
         const nextEmptyField = flatFields.find(f => f.isEmpty);
         if (nextEmptyField) {
-          nextQuestion = `Can you tell me your ${nextEmptyField.field.label.toLowerCase()}?`;
+          const fld = nextEmptyField.field;
+          let q = `Can you tell me your ${fld.label.toLowerCase()}?`;
+          if (fld.options && fld.options.length > 0) {
+            q = `For ${fld.label.toLowerCase()}, please select: ${fld.options.slice(0, 4).join(" or ")}.`;
+          }
+          nextQuestion = q;
+          clarification = {
+            fieldKey: fld.fieldKey,
+            label: fld.label,
+            question: q
+          };
         } else {
-          // All fields are filled, suggest submission
-          nextQuestion = "All fields are filled. Would you like to submit the form now?";
+          nextQuestion = "All required fields look complete. Would you like to review and submit the form?";
         }
       }
       
       return {
         fieldUpdates,
         nextQuestion,
-        confidence: 0.7 // Moderate confidence for regex-based extraction
+        confidence: 0.8,
+        clarification
       };
     }
   } catch (error) {
@@ -499,7 +524,37 @@ Respond with a JSON object in this exact format:
   }
 }
 
-export async function generateWelcomeMessage(formCode: string): Promise<string> {
+export async function generateWelcomeMessage(formCode: string, lang: string = 'en-IN'): Promise<string> {
+  const normForm = (formCode || 'default').toLowerCase();
+
+  if (lang.startsWith('hi')) {
+    const hiMessages: Record<string, string> = {
+      'passport': "पासपोर्ट आवेदन पत्र में आपका स्वागत है! मैं आपका FormEase सहायक हूँ, जो वॉयस कमांड से इस फॉर्म को पूरा करने में आपकी सहायता करेगा।",
+      'aadhaar': "आधार आवेदन पत्र में आपका स्वागत है! मैं आपका FormEase सहायक हूँ, जो वॉयस कमांड से इस फॉर्म को पूरा करने में आपकी सहायता करेगा।",
+      'voterid': "वोटर आईडी आवेदन पत्र में आपका स्वागत है! मैं आपका FormEase सहायक हूँ, जो वॉयस कमांड से इस फॉर्म को पूरा करने में आपकी सहायता करेगा।",
+      'default': "FormEase में आपका स्वागत है! मैं आपका डिजिटल सहायक हूँ, जो वॉयस कमांड से इस फॉर्म को भरने में आपकी मदद करूँगा।"
+    };
+    return hiMessages[normForm] || hiMessages['default'];
+  }
+
+  if (lang.startsWith('te')) {
+    const teMessages: Record<string, string> = {
+      'passport': "పాస్‌పోర్ట్ దరఖాస్తుకు స్వాగతం! వాయిస్ ఆదేశాల ద్వారా ఈ ఫారమ్‌ను పూరించడానికి నేను మీకు సహాయం చేస్తాను.",
+      'aadhaar': "ఆధార్ దరఖాస్తుకు స్వాగతం! వాయిస్ ఆదేశాల ద్వారా ఈ ఫారమ్‌ను పూరించడానికి నేను మీకు సహాయం చేస్తాను.",
+      'voterid': "ఓటర్ ఐడీ దరఖాస్తుకు స్వాగతం! వాయిస్ ఆదేశాల ద్వారా ఈ ఫారమ్‌ను పూరించడానికి నేను మీకు సహాయం చేస్తాను.",
+      'default': "FormEase కు స్వాగతం! వాయిస్ ఆదేశాల ద్వారా ఈ ఫారమ్‌ను పూరించడానికి నేను మీకు సహాయం చేస్తాను."
+    };
+    return teMessages[normForm] || teMessages['default'];
+  }
+
+  if (lang.startsWith('ta')) {
+    return "FormEase-க்கு வரவேற்கிறோம்! குரல் வழிகாட்டலுடன் படிவத்தை நிரப்ப நான் உங்களுக்கு உதவுவேன்.";
+  }
+
+  if (lang.startsWith('kn')) {
+    return "FormEase ಗೆ ಸುಸ್ವಾಗತ! ಧ್ವನಿ ಆಜ್ಞೆಗಳ ಮೂಲಕ ಫಾರ್ಮ್ ತುಂಬಲು ನಾನು ನಿಮಗೆ ಸಹಾಯ ಮಾಡುತ್ತೇನೆ.";
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -508,7 +563,7 @@ export async function generateWelcomeMessage(formCode: string): Promise<string> 
           role: "system",
           content: `Generate a friendly welcome message in English for a user filling out a ${formCode} form. 
           The message should be conversational and explain that you're an AI assistant 
-          who will help them fill the form using voice commands. Keep it to 2-3 sentences.
+          who will help them fill the form using voice commands. Keep it to 1-2 short sentences.
           Respond ONLY in English.`
         }
       ]

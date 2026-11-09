@@ -1,4 +1,4 @@
-FormEase — NxtGen Creators
+FormEase
 =========================
 
 Project summary

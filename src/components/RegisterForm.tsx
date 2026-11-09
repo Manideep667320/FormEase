@@ -17,6 +17,7 @@ import {
 import { Mail, Lock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { registerUser } from "@/lib/firebase";
+import { apiRequest } from "@/lib/queryClient";
 import { GoogleSignIn } from "@/components/GoogleSignIn";
 import { PhoneSignIn } from "@/components/PhoneSignIn";
 
@@ -47,7 +48,26 @@ export function RegisterForm({ onSuccess, onRegistrationComplete }: {
     setIsLoading(true);
     
     try {
-      const user = await registerUser(values.email, values.password);
+      // 1. Register in Neon PostgreSQL backend
+      try {
+        await apiRequest({
+          url: '/api/auth/register',
+          method: 'POST',
+          data: {
+            username: values.email.split('@')[0],
+            email: values.email,
+            password: values.password,
+            fullName: values.name
+          }
+        });
+      } catch (err: any) {
+        console.log("Neon registration attempt note:", err?.message);
+      }
+
+      // 2. Also register in Firebase if available
+      try {
+        await registerUser(values.email, values.password);
+      } catch (_) {}
       toast({
         title: "Account created!",
         description: "You have successfully registered. Please log in now.",

@@ -17,6 +17,7 @@ import {
 import { Mail, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { loginUser } from "@/lib/firebase";
+import { apiRequest } from "@/lib/queryClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { GoogleSignIn } from "@/components/GoogleSignIn";
@@ -46,6 +47,36 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     setIsLoading(true);
     
     try {
+      // 1. Try Neon Database login first
+      try {
+        const res = await apiRequest<{ token: string; user: any }>({
+          url: '/api/auth/login',
+          method: 'POST',
+          data: { username: values.email, password: values.password }
+        });
+        if (res && res.token) {
+          localStorage.setItem('formease_auth_token', res.token);
+          setCurrentUser({
+            uid: res.user.id,
+            email: res.user.email,
+            displayName: res.user.fullName || res.user.username,
+            getIdToken: async () => res.token
+          } as any);
+
+          toast({
+            title: "Logged in successfully!",
+            description: `Welcome back, ${res.user.fullName || res.user.username}!`,
+          });
+
+          setIsLoading(false);
+          if (onSuccess) onSuccess();
+          setTimeout(() => navigate("/main"), 400);
+          return;
+        }
+      } catch (_) {
+        // Fall back to client auth
+      }
+
       const user = await loginUser(values.email, values.password);
       setCurrentUser(user);
       

@@ -1,9 +1,9 @@
-
+import React from "react";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
+import GsapVoiceMotionGraphics from "@/components/GsapVoiceMotionGraphics";
 import FeaturesSection from "@/components/FeaturesSection";
 import BenefitsSection from "@/components/BenefitsSection";
-import DemoSection from "@/components/DemoSection";
 import TestimonialsSection from "@/components/TestimonalSection"; 
 import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
@@ -14,8 +14,8 @@ const Index = () => {
       <Header />
       <main className="flex-grow">
         <HeroSection />
+        <GsapVoiceMotionGraphics />
         <FeaturesSection />
-        <DemoSection />
         <BenefitsSection />
         <TestimonialsSection />
         <CTASection />

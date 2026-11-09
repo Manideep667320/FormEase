@@ -18,6 +18,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    const localToken = localStorage.getItem('formease_auth_token');
+    if (localToken) {
+      fetch('/api/user/profile', {
+        headers: { Authorization: `Bearer ${localToken}` }
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(u => {
+          if (u && u.id) {
+            setCurrentUser({
+              uid: u.id,
+              email: u.email,
+              displayName: u.fullName || u.username,
+              getIdToken: async () => localToken
+            } as any);
+          }
+          setLoading(false);
+        })
+        .catch(() => {
+          setLoading(false);
+        });
+    }
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setCurrentUser(user);
       setLoading(false);

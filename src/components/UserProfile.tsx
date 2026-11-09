@@ -26,6 +26,7 @@ export default function UserProfile() {
   const handleLogout = async () => {
     try {
       setIsLoading(true);
+      localStorage.removeItem('formease_auth_token');
       await logoutUser();
       toast({
         title: "Logged out!",

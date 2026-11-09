@@ -1,14 +1,29 @@
-import { auth } from "@/lib/firebase";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import DraftManager from "@/components/DraftManager";
-import { Redirect } from "wouter";
+import { Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Drafts() {
-  const user = auth.currentUser;
-  const isLoading = !user;
+  const { currentUser, loading } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      if (currentUser && 'getIdToken' in currentUser) {
+        try {
+          const idToken = await currentUser.getIdToken();
+          setToken(idToken);
+        } catch {
+          setToken(currentUser.uid);
+        }
+      }
+    };
+    fetchToken();
+  }, [currentUser]);
 
   // Show loading state while checking auth
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="container mx-auto py-12">
         <div className="space-y-2">
@@ -24,14 +39,14 @@ export default function Drafts() {
   }
 
   // Redirect to login if not authenticated
-  if (!user) {
-    return <Redirect to="/" />;
+  if (!currentUser) {
+    return <Navigate to="/" replace />;
   }
 
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-6 text-center">Your Saved Drafts</h1>
-      <DraftManager authToken={user.uid} />
+      <DraftManager authToken={token || currentUser.uid} />
     </div>
   );
 }

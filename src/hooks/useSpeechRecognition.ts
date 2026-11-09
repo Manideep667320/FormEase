@@ -8,9 +8,25 @@ declare global {
 }
 
 const languageMap: Record<string, string> = {
-  'en': 'en-US',
+  'en': 'en-IN',
+  'en-IN': 'en-IN',
+  'en-US': 'en-US',
   'hi': 'hi-IN',
+  'hi-IN': 'hi-IN',
   'te': 'te-IN',
+  'te-IN': 'te-IN',
+  'ta': 'ta-IN',
+  'ta-IN': 'ta-IN',
+  'kn': 'kn-IN',
+  'kn-IN': 'kn-IN',
+  'bn': 'bn-IN',
+  'bn-IN': 'bn-IN',
+  'mr': 'mr-IN',
+  'mr-IN': 'mr-IN',
+  'gu': 'gu-IN',
+  'gu-IN': 'gu-IN',
+  'ml': 'ml-IN',
+  'ml-IN': 'ml-IN'
 };
 
 interface SpeechRecognitionHook {
@@ -100,7 +116,7 @@ export default function useSpeechRecognition(): SpeechRecognitionHook {
       return;
     }
 
-    const bcp47Lang = languageMap[lang || 'en'] || 'en-US';
+    const bcp47Lang = languageMap[lang || ''] || lang || 'en-IN';
     if (bcp47Lang !== currentLanguage) {
       setCurrentLanguage(bcp47Lang);
       recognitionRef.current.lang = bcp47Lang;

@@ -1,0 +1,107 @@
+{
+  "form_fields": [
+    {
+      "section": "Applicant Profile",
+      "fields": [
+        {
+          "field_name": "Full Name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "field_name": "Date of Birth",
+          "type": "date",
+          "required": true
+        },
+        {
+          "field_name": "Gender",
+          "type": "select",
+          "options": ["Male", "Female", "Transgender", "Prefer not to say"],
+          "required": true
+        },
+        {
+          "field_name": "Mobile Number",
+          "type": "phone",
+          "required": true
+        },
+        {
+          "field_name": "Email Address",
+          "type": "email",
+          "required": false
+        }
+      ]
+    },
+    {
+      "section": "Application & Purpose",
+      "fields": [
+        {
+          "field_name": "Application Title",
+          "type": "text",
+          "required": true
+        },
+        {
+          "field_name": "Issuing Authority or Department",
+          "type": "text",
+          "required": false
+        },
+        {
+          "field_name": "Application Category",
+          "type": "select",
+          "options": ["Certificate Request", "License Application", "Grant / Scheme", "Official Verification", "General Grievance / Other"],
+          "required": true
+        },
+        {
+          "field_name": "Reference or Case Number",
+          "type": "text",
+          "required": false
+        }
+      ]
+    },
+    {
+      "section": "Address & Residential Details",
+      "fields": [
+        {
+          "field_name": "House and Street Address",
+          "type": "text",
+          "required": true
+        },
+        {
+          "field_name": "City or Village",
+          "type": "text",
+          "required": true
+        },
+        {
+          "field_name": "District",
+          "type": "text",
+          "required": true
+        },
+        {
+          "field_name": "State",
+          "type": "text",
+          "required": true
+        },
+        {
+          "field_name": "PIN Code",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "section": "Declaration & Remarks",
+      "fields": [
+        {
+          "field_name": "Additional Remarks or Justification",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "field_name": "Declaration of Accuracy",
+          "type": "select",
+          "options": ["I hereby declare all particulars provided above are authentic and complete."],
+          "required": true
+        }
+      ]
+    }
+  ]
+}
